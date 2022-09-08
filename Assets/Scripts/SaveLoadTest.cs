@@ -6,6 +6,7 @@ using UnityEngine;
 
 public class SaveLoadTest : MonoBehaviour
 {
+    public bool isDebug;
     public bool isClearPlayerPrefs;
 
     public bool savePrimitive;
@@ -31,6 +32,8 @@ public class SaveLoadTest : MonoBehaviour
 
     void Start()
     {
+        DataManager.Instance.debugEnabled = isDebug;
+
         if (isClearPlayerPrefs)
             PlayerPrefs.DeleteAll();
 
@@ -124,6 +127,8 @@ public class SaveLoadTest : MonoBehaviour
         //ClassTest2 demo1Test = DataManager.Instance.Load<ClassTest2>("DemoClass2345");
 
         ClassTest3 test3 = DataManager.Instance.Load<ClassTest3>("test2345");
+
+        //ClassTest3 demo1Test = DataManager.Instance.Load("test2345", typeof(ClassTest3)) as ClassTest3;
     }
 
     private void SaveArrayList()

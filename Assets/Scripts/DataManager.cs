@@ -8,18 +8,30 @@ public class DataManager
 {
     public static DataManager Instance { get; } = new();
 
+    public bool debugEnabled = false;
+
+    private string endKey;
+
+    private bool main = true;
+
     public void Save(string key, object data)
     {
+        if (main)
+        {
+            endKey = key;
+            main = false;
+        }
+
         Type dataType = data.GetType();
         TypeCode dataTypeCode = Type.GetTypeCode(dataType);
 
-        //Debug.Log("data type：" + dataType);
-        //Debug.Log("dataTypeCode：" + dataTypeCode);
+        debug("data type：" + dataType);
+        debug("dataTypeCode：" + dataTypeCode);
 
         //enum
         if (dataType.IsEnum)
         {
-            Debug.Log("存入枚举");
+            debug("存入枚举");
             SaveEnum(key, data);
         }
         //Boolean Char SByte Int16 Int32 Byte UInt16
@@ -34,7 +46,7 @@ public class DataManager
         //array
         else if (dataType.IsArray)
         {
-            Debug.Log("存入数组");
+            debug("存入数组");
             SaveArray(key, data);
         }
         //ArrayList GenericList
@@ -42,168 +54,209 @@ public class DataManager
         {
             if (dataType.GetGenericArguments().Length == 0)
             {
-                Debug.Log("存入ArrayList");
+                debug("存入ArrayList");
                 SaveArrayList(key, data);
             }
             else if (dataType.GetGenericArguments().Length == 1)
             {
-                Debug.Log("存入List");
+                debug("存入List");
                 SaveList(key, data);
             }
         }
         //Dictionary
         else if (typeof(IDictionary).IsAssignableFrom(dataType))
         {
-            Debug.Log("存入字典");
+            debug("存入字典");
             SaveDictionary(key, data);
         }
         //class struct
         else
         {
-            Debug.Log("存入class");
+            debug("存入class");
             SaveClass(key, data);
         }
 
-        PlayerPrefs.Save();
+        if (endKey == key)
+        {
+            PlayerPrefs.Save();
+            Debug.Log(key + "已保存");
+            main = true;
+        }
     }
 
     public object Load(string key, Type type)
     {
+        if (main)
+        {
+            endKey = key;
+            main = false;
+        }
+
         TypeCode dataTypeCode = Type.GetTypeCode(type);
 
-        //Debug.Log("当前key：" + key);
-        //Debug.Log("data type：" + type);
+        debug("当前key：" + key);
+        debug("data type：" + type);
+
+        object ret = null;
 
         if (type.IsEnum)
         {
-            Debug.Log("读取枚举");
-            return LoadEnum(key, type);
+            debug("读取枚举");
+            ret = LoadEnum(key, type);
         }
         //Boolean Char SByte Int16 Int32 Byte UInt16
         else if ((int)dataTypeCode >= 3 && (int)dataTypeCode <= 9)
-            return Convert.ChangeType(LoadInt(key), type);
+            ret = Convert.ChangeType(LoadInt(key), type);
         //Single
         else if ((int)dataTypeCode == 13)
-            return LoadSingle(key);
+            ret = LoadSingle(key);
         //UInt32 Int64 UInt64 Double Decimal String
         else if ((int)dataTypeCode >= 10 && (int)dataTypeCode <= 18)
-            return Convert.ChangeType(LoadString(key), type);
+            ret = Convert.ChangeType(LoadString(key), type);
         //array
         else if (type.IsArray)
         {
-            Debug.Log("读取数组");
-            return LoadArray(key, type);
+            debug("读取数组");
+            ret = LoadArray(key, type);
         }
         //ArrayList GenericList
         else if (typeof(IList).IsAssignableFrom(type))
         {
             if (type.GetGenericArguments().Length == 0)
             {
-                Debug.Log("读取ArrayList");
-                return LoadArrayList(key);
+                debug("读取ArrayList");
+                ret = LoadArrayList(key);
             }
             else if (type.GetGenericArguments().Length == 1)
             {
-                Debug.Log("读取List");
-                return LoadList(key, type);
+                debug("读取List");
+                ret = LoadList(key, type);
             }
-            return null;
         }
         //Dictionary
         else if (typeof(IDictionary).IsAssignableFrom(type))
         {
-            Debug.Log("读取字典");
-            return LoadDictionary(key, type);
+            debug("读取字典");
+            ret = LoadDictionary(key, type);
         }
         //class struct
         else
         {
-            Debug.Log("读取class");
-            return LoadClass(key, type);
+            debug("读取class");
+            ret = LoadClass(key, type);
         }
+
+        if (endKey == key)
+        {
+            main = true;
+            Debug.Log(key + "已读取");
+        }
+
+        return ret;
     }
-    
+
     public T Load<T>(string key)
     {
+        if (main)
+        {
+            endKey = key;
+            main = false;
+        }
+
         Type type = typeof(T);
 
         TypeCode dataTypeCode = Type.GetTypeCode(type);
 
-        //Debug.Log("当前key：" + key);
-        //Debug.Log("data type：" + type);
+        debug("当前key：" + key);
+        debug("data type：" + type);
+
+        object ret = null;
 
         if (type.IsEnum)
         {
-            Debug.Log("读取枚举");
-            return (T)LoadEnum(key, type);
+            debug("读取枚举");
+            ret = LoadEnum(key, type);
         }
         //Boolean Char SByte Int16 Int32 Byte UInt16
         else if ((int)dataTypeCode >= 3 && (int)dataTypeCode <= 9)
-            return (T)Convert.ChangeType(LoadInt(key), type);
+            ret = Convert.ChangeType(LoadInt(key), type);
         //Single
         else if ((int)dataTypeCode == 13)
-            return (T)Convert.ChangeType(LoadSingle(key), type);
+            ret = Convert.ChangeType(LoadSingle(key), type);
         //UInt32 Int64 = 11 UInt64 Double Decimal String
         else if ((int)dataTypeCode >= 10 && (int)dataTypeCode <= 18)
-            return (T)Convert.ChangeType(LoadString(key), type);
+            ret = Convert.ChangeType(LoadString(key), type);
         //array
         else if (type.IsArray)
         {
-            Debug.Log("读取数组");
-            return (T)LoadArray(key, type);
+            debug("读取数组");
+            ret = LoadArray(key, type);
         }
         //ArrayList GenericList
         else if (typeof(IList).IsAssignableFrom(type))
         {
             if (type.GetGenericArguments().Length == 0)
             {
-                Debug.Log("读取ArrayList");
-                return (T)LoadArrayList(key);
+                debug("读取ArrayList");
+                ret = (T)LoadArrayList(key);
             }
             else if (type.GetGenericArguments().Length == 1)
             {
-                Debug.Log("读取List");
-                return (T)LoadList(key, type);
+                debug("读取List");
+                ret = LoadList(key, type);
             }
-            return default(T);
         }
         //Dictionary
         else if (typeof(IDictionary).IsAssignableFrom(type))
         {
-            Debug.Log("读取字典");
-            return (T)LoadDictionary(key, type);
+            debug("读取字典");
+            ret = LoadDictionary(key, type);
         }
         //class struct
         else
         {
-            Debug.Log("读取class");
-            return (T)LoadClass(key, type);
+            debug("读取class");
+            ret = LoadClass(key, type);
         }
+
+        if (endKey == key)
+        {
+            main = true;
+            Debug.Log(key + "已读取");
+        }
+
+        return (T)ret;
     }
     
+    private void debug(string msg)
+    {
+        if (debugEnabled)
+            Debug.Log(msg);
+    }
+
     private void SaveInt(string key,int value)
     {
-        Debug.Log("当前key：" + key);
-        Debug.Log("存入变量值为：" + value);
-        Debug.Log("==============================");
+        debug("当前key：" + key);
+        debug("存入变量值为：" + value);
+        debug("==============================");
 
         PlayerPrefs.SetInt(key, EncryptInt(key, value));
     }
 
     private void SaveSingle(string key, float value)
     {
-        Debug.Log("当前key：" + key);
-        Debug.Log("存入变量值为：" + value);
-        Debug.Log("==============================");
+        debug("当前key：" + key);
+        debug("存入变量值为：" + value);
+        debug("==============================");
 
         PlayerPrefs.SetFloat(key, value);
     }
 
     private void SaveString(string key, String value)
     {
-        Debug.Log("当前key：" + key);
-        Debug.Log("存入变量值为：" + value);
-        Debug.Log("==============================");
+        debug("当前key：" + key);
+        debug("存入变量值为：" + value);
+        debug("==============================");
 
         PlayerPrefs.SetString(key, value);
     }
@@ -212,9 +265,9 @@ public class DataManager
     {
         int value = DecryptInt(key, PlayerPrefs.GetInt(key, key.Length));
 
-        Debug.Log("当前key：" + key);
-        Debug.Log("读取变量值为：" + value);
-        Debug.Log("==============================");
+        debug("当前key：" + key);
+        debug("读取变量值为：" + value);
+        debug("==============================");
 
         return value;
     }
@@ -223,9 +276,9 @@ public class DataManager
     {
         float value = PlayerPrefs.GetFloat(key, 0);
 
-        Debug.Log("当前key：" + key);
-        Debug.Log("读取变量值为：" + value);
-        Debug.Log("==============================");
+        debug("当前key：" + key);
+        debug("读取变量值为：" + value);
+        debug("==============================");
 
         return value;
     }
@@ -234,9 +287,9 @@ public class DataManager
     {
         string value = PlayerPrefs.GetString(key, "1");
 
-        Debug.Log("当前key：" + key);
-        Debug.Log("读取变量值为：" + value);
-        Debug.Log("==============================");
+        debug("当前key：" + key);
+        debug("读取变量值为：" + value);
+        debug("==============================");
 
         return value;
     }
@@ -256,7 +309,7 @@ public class DataManager
         IList list = data as IList;
         int count = list.Count;
 
-        Debug.Log("存入数组长度为：" + count);
+        debug("存入数组长度为：" + count);
 
         SaveInt(key + "_Count", count);
 
@@ -269,8 +322,8 @@ public class DataManager
         int count = Convert.ToInt32(Load(key + "_Count", typeof(int)));
         Type elementType = type.GetElementType();
 
-        Debug.Log("读取数组长度为：" + count);
-        Debug.Log("elementType：" + elementType);
+        debug("读取数组长度为：" + count);
+        debug("elementType：" + elementType);
 
         IList ret = Array.CreateInstance(elementType, count);
 
@@ -288,10 +341,10 @@ public class DataManager
         for (int i = 0; i < fieldInfos.Length;)
         {
             fieldInfo = fieldInfos[i++];
-            Debug.Log("存入字段" + i);
+            debug("存入字段" + i);
 
-            Debug.Log("存入变量类型为：" + Type.GetTypeCode(fieldInfo.FieldType));
-            Debug.Log("存入变量名为：" + fieldInfo.Name);
+            debug("存入变量类型为：" + Type.GetTypeCode(fieldInfo.FieldType));
+            debug("存入变量名为：" + fieldInfo.Name);
 
             Save(key + "_" + fieldInfo.Name, fieldInfo.GetValue(data));
         }
@@ -307,10 +360,10 @@ public class DataManager
         for (int i = 0; i < fieldInfos.Length;)
         {
             fieldInfo = fieldInfos[i++];
-            Debug.Log("读取字段" + i);
+            debug("读取字段" + i);
 
-            Debug.Log("读取变量类型为：" + Type.GetTypeCode(fieldInfo.FieldType));
-            Debug.Log("读取变量名为：" + fieldInfo.Name);
+            debug("读取变量类型为：" + Type.GetTypeCode(fieldInfo.FieldType));
+            debug("读取变量名为：" + fieldInfo.Name);
 
             fieldInfo.SetValue(ret, Load(key + "_" + fieldInfo.Name, fieldInfo.FieldType));
         }
@@ -323,7 +376,7 @@ public class DataManager
         IList list = data as IList;
         int count = list.Count;
 
-        Debug.Log("存入ArrayList长度为：" + count);
+        debug("存入ArrayList长度为：" + count);
 
         SaveInt(key + "_Count", count);
 
@@ -339,7 +392,7 @@ public class DataManager
     {
         int count = Convert.ToInt32(Load(key + "_Count", typeof(int)));
 
-        Debug.Log("读取ArrayList长度为：" + count);
+        debug("读取ArrayList长度为：" + count);
 
         ArrayList ret = new();
 
@@ -347,7 +400,7 @@ public class DataManager
         {
             Type elementType = Type.GetType(LoadString(key + "_Index" + i + "_Type"));
 
-            Debug.Log("elementType：" + elementType);
+            debug("elementType：" + elementType);
 
             ret.Add(Load(key + "_Index" + i, elementType));
         }
@@ -361,7 +414,7 @@ public class DataManager
         int count = list.Count;
         SaveInt(key + "_Count", count);
 
-        Debug.Log("存入List长度为：" + count);
+        debug("存入List长度为：" + count);
 
         for (int i = 0; i < count; i++)
             Save(key + "_Index" + i, list[i]);
@@ -372,8 +425,8 @@ public class DataManager
         int count = Convert.ToInt32(Load(key + "_Count", typeof(int)));
         Type valueType = type.GetGenericArguments()[0];
 
-        Debug.Log("读取List长度为：" + count);
-        Debug.Log("valueType：" + valueType);
+        debug("读取List长度为：" + count);
+        debug("valueType：" + valueType);
 
         IList ret = Activator.CreateInstance(type) as IList;
 
@@ -390,14 +443,14 @@ public class DataManager
         IDictionaryEnumerator enu = dic.GetEnumerator();
 
         SaveInt(key + "_Count", count);
-        Debug.Log("存入字典对数为：" + count);
+        debug("存入字典对数为：" + count);
 
         for (int i = 0; i < count; i++)
         {
             enu.MoveNext();
 
-            Debug.Log("键：" + enu.Key);
-            Debug.Log("值：" + enu.Value);
+            debug("键：" + enu.Key);
+            debug("值：" + enu.Value);
 
             Save(key + "_Index" + i + "_Key", enu.Key);
             Save(key + "_Index" + i + "_Value", enu.Value);
@@ -410,9 +463,9 @@ public class DataManager
         Type keyType = type.GetGenericArguments()[0];
         Type valueType = type.GetGenericArguments()[1];
 
-        Debug.Log("读取字典对数为：" + count);
-        Debug.Log("keyType：" + keyType);
-        Debug.Log("valueType：" + valueType);
+        debug("读取字典对数为：" + count);
+        debug("keyType：" + keyType);
+        debug("valueType：" + valueType);
 
         IDictionary ret = Activator.CreateInstance(type) as IDictionary;
 
